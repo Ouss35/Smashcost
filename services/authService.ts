@@ -1,14 +1,11 @@
+import { auth } from './firebase';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged 
+} from 'firebase/auth';
 import { User } from '../types';
-
-const STORAGE_KEY = 'smash_eats_user';
-
-let authListener: ((user: User | null) => void) | null = null;
-
-const notifyAuthChange = (user: User | null) => {
-  if (authListener) {
-    authListener(user);
-  }
-};
 
 interface AuthResponse {
   success: boolean;
@@ -17,52 +14,53 @@ interface AuthResponse {
 }
 
 export const signUp = async (email: string, password: string): Promise<AuthResponse> => {
-  // Mock signup - simulate success
-  const user: User = { 
-    uid: `user-${Date.now()}`, 
-    email,
-    displayName: email.split('@')[0]
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-  notifyAuthChange(user);
-  return { success: true, user };
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    const user: User = {
+      uid: result.user.uid,
+      email: result.user.email || email,
+      displayName: result.user.displayName || email.split('@')[0]
+    };
+    return { success: true, user };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 };
 
 export const signIn = async (email: string, password: string): Promise<AuthResponse> => {
-  // Mock signin - simulate success
-  const user: User = { 
-    uid: 'user-demo-123', 
-    email,
-    displayName: email.split('@')[0]
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-  notifyAuthChange(user);
-  return { success: true, user };
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    const user: User = {
+      uid: result.user.uid,
+      email: result.user.email || email,
+      displayName: result.user.displayName || email.split('@')[0]
+    };
+    return { success: true, user };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 };
 
 export const logOut = async () => {
-  localStorage.removeItem(STORAGE_KEY);
-  notifyAuthChange(null);
-  return { success: true };
+  try {
+    await signOut(auth);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 };
 
 export const onAuthChange = (callback: (user: User | null) => void) => {
-  authListener = callback;
-  
-  // Check initial state
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    try {
-      const user = JSON.parse(stored);
-      setTimeout(() => callback(user), 0);
-    } catch (e) {
-      setTimeout(() => callback(null), 0);
+  return onAuthStateChanged(auth, (firebaseUser) => {
+    if (firebaseUser) {
+      const user: User = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || ''
+      };
+      callback(user);
+    } else {
+      callback(null);
     }
-  } else {
-    setTimeout(() => callback(null), 0);
-  }
-
-  return () => {
-    authListener = null;
-  };
+  });
 };
