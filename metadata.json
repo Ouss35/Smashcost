@@ -1,0 +1,5 @@
+{
+  "name": "Smash Cost",
+  "description": "Interactive product cost sheet and margin analyzer for Smash Eats restaurant using Gemini AI for profitability insights.",
+  "requestFramePermissions": []
+}
