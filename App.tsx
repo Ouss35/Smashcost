@@ -130,6 +130,7 @@ const App: React.FC = () => {
             burger={currentBurger} 
             availableBurgers={burgers}
             supplies={supplies}
+            userId={user.uid}
             onUpdate={handleUpdateBurger}
             onSwitchBurger={setSelectedBurgerId}
             onAddBurger={handleAddBurger}
