@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { ProductSheet } from './components/ProductSheet';
 import { Dashboard } from './components/Dashboard';
@@ -18,6 +17,7 @@ const App: React.FC = () => {
   const [supplies, setSupplies] = useState<SupplyItem[]>(INITIAL_SUPPLIES);
   const [selectedBurgerId, setSelectedBurgerId] = useState<string>(BURGERS_DATA[0].id);
   const [view, setView] = useState<'dashboard' | 'sheet' | 'stock'>('sheet');
+  const dataLoaded = useRef(false);
 
   // Auth listener
   useEffect(() => {
@@ -29,22 +29,23 @@ const App: React.FC = () => {
         
         if (loadedBurgers) setBurgers(loadedBurgers);
         if (loadedSupplies) setSupplies(loadedSupplies);
+        dataLoaded.current = true;
       }
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // Save burgers to Firestore
+  // Save burgers to Firestore (only after data is loaded)
   useEffect(() => {
-    if (user) {
+    if (user && dataLoaded.current) {
       saveBurgers(user.uid, burgers);
     }
   }, [burgers, user]);
 
-  // Save supplies to Firestore
+  // Save supplies to Firestore (only after data is loaded)
   useEffect(() => {
-    if (user) {
+    if (user && dataLoaded.current) {
       saveSupplies(user.uid, supplies);
     }
   }, [supplies, user]);
