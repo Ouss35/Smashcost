@@ -29,8 +29,8 @@ const App: React.FC = () => {
         
         if (loadedBurgers) setBurgers(loadedBurgers);
         if (loadedSupplies) setSupplies(loadedSupplies);
-        dataLoaded.current = true;
       }
+      dataLoaded.current = true;
       setLoading(false);
     });
     return () => unsubscribe();
