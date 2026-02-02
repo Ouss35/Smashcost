@@ -1,13 +1,14 @@
-
 import { Burger, Ingredient, AnalysisResult, SupplyItem } from '../types';
 import { analyzeBurgerCost } from '../services/geminiService';
-import { Calculator, Download, RefreshCw, Euro, ChevronDown, Image as ImageIcon, Plus, Trash2, Package, GripVertical, Link as LinkIcon, Lock, Wand2, TrendingUp, AlertCircle, Sparkles, CupSoda, Utensils } from 'lucide-react';
+import { uploadBurgerImage } from '../services/firebaseService';
+import { Calculator, Download, RefreshCw, Euro, ChevronDown, Image as ImageIcon, Plus, Trash2, Package, GripVertical, Link as LinkIcon, Lock, Wand2, TrendingUp, AlertCircle, Sparkles, CupSoda, Utensils, Upload } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 
 interface ProductSheetProps {
   burger: Burger;
   availableBurgers: Burger[];
   supplies: SupplyItem[];
+  userId: string;
   onUpdate: (burger: Burger) => void;
   onSwitchBurger: (id: string) => void;
   onAddBurger: () => void;
@@ -37,16 +38,18 @@ const formatUnitLabel = (label: string = '') => {
   return label;
 };
 
-export const ProductSheet: React.FC<ProductSheetProps> = ({ burger, availableBurgers, supplies, onUpdate, onSwitchBurger, onAddBurger, onDeleteBurger }) => {
+export const ProductSheet: React.FC<ProductSheetProps> = ({ burger, availableBurgers, supplies, userId, onUpdate, onSwitchBurger, onAddBurger, onDeleteBurger }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const compositionRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showStockSelector, setShowStockSelector] = useState(false);
   const [selectedSupplyId, setSelectedSupplyId] = useState('');
   const [supplyQuantity, setSupplyQuantity] = useState(1);
   const [isDownloading, setIsDownloading] = useState(false);
   const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
   const [selectedPriceType, setSelectedPriceType] = useState<PriceType>('single');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   const getIngredientCost = (ing: Ingredient): number => {
     if (ing.supplyId) {
@@ -187,6 +190,22 @@ export const ProductSheet: React.FC<ProductSheetProps> = ({ burger, availableBur
     window.html2pdf().set(opt).from(element).save().then(() => setIsDownloading(false));
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && userId) {
+      setIsUploadingImage(true);
+      const imageUrl = await uploadBurgerImage(userId, burger.id, file);
+      if (imageUrl) {
+        onUpdate({ ...burger, imagePlaceholder: imageUrl });
+      }
+      setIsUploadingImage(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div id="printable-product-sheet" className="space-y-6 pb-12 animate-in fade-in duration-500">
       
@@ -249,15 +268,33 @@ export const ProductSheet: React.FC<ProductSheetProps> = ({ burger, availableBur
                                 placeholder="Description de la recette..."
                             />
                         </div>
-                        <div className="w-40 h-40 sm:w-28 sm:h-28 shrink-0 rounded-full bg-slate-50 flex items-center justify-center border-4 border-white shadow-inner overflow-hidden">
-                            {burger.imagePlaceholder ? (
-                                <img src={burger.imagePlaceholder} alt={burger.name} className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="flex flex-col items-center justify-center text-slate-200">
-                                    <ImageIcon className="w-6 h-6 mb-1 opacity-50" />
-                                    <span className="text-[9px] font-black tracking-tighter opacity-50 uppercase">Img</span>
-                                </div>
-                            )}
+                        <div 
+                            className="w-40 h-40 sm:w-28 sm:h-28 shrink-0 relative group cursor-pointer"
+                            onClick={triggerFileInput}
+                            title="Cliquez pour changer la photo"
+                        >
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*" 
+                                onChange={handleImageUpload} 
+                            />
+                            <div className="w-full h-full rounded-full bg-slate-50 flex items-center justify-center border-4 border-white shadow-inner overflow-hidden relative z-10">
+                                {isUploadingImage ? (
+                                    <RefreshCw className="w-6 h-6 text-slate-400 animate-spin" />
+                                ) : burger.imagePlaceholder ? (
+                                    <img src={burger.imagePlaceholder} alt={burger.name} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300" />
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center text-slate-200 group-hover:text-slate-300 transition-colors">
+                                        <ImageIcon className="w-6 h-6 mb-1 opacity-50" />
+                                        <span className="text-[9px] font-black tracking-tighter opacity-50 uppercase">Img</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-full">
+                                <Upload className="w-6 h-6 text-white drop-shadow-md" />
+                            </div>
                         </div>
                     </div>
                 </div>
