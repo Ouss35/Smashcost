@@ -1,6 +1,6 @@
 import { Burger, Ingredient, AnalysisResult, SupplyItem } from '../types';
 import { analyzeBurgerCost } from '../services/geminiService';
-import { uploadBurgerImage } from '../services/firebaseService';
+import { uploadBurgerImage } from '../services/firestoreService';
 import { Calculator, Download, RefreshCw, Euro, ChevronDown, Image as ImageIcon, Plus, Trash2, Package, GripVertical, Link as LinkIcon, Lock, Wand2, TrendingUp, AlertCircle, Sparkles, CupSoda, Utensils, Upload } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 
